@@ -29,7 +29,12 @@ import { HSLA, HSVA, HSVAsource } from './helpers/color.interfaces';
           [style.top]="pointerTop"
           [style.left]="pointerLeft"
         >
-          <div class="saturation-circle" [ngStyle]="circle"></div>
+          <div
+            class="saturation-circle"
+            [ngStyle]="circle"
+            tabindex="0"
+            (keydown)="handleKeydown($event)"
+          ></div>
         </div>
       </div>
     </div>
@@ -93,7 +98,7 @@ export class SaturationComponent implements OnChanges {
 
   ngOnChanges() {
     this.background = `hsl(${this.hsl.h}, 100%, 50%)`;
-    this.pointerTop = -(this.hsv.v * 100) + 1 + 100 + '%';
+    this.pointerTop = (1 - this.hsv.v) * 100+ '%';
     this.pointerLeft = this.hsv.s * 100 + '%';
   }
   handleChange({ top, left, containerHeight, containerWidth, $event }) {
@@ -120,6 +125,46 @@ export class SaturationComponent implements OnChanges {
       source: 'hsva',
     };
     this.onChange.emit({ data, $event });
+  }
+  handleKeydown($event: KeyboardEvent) {
+    const step = 0.01;
+    let moved = true;
+    let x = parseFloat(this.pointerLeft) / 100;
+    let y = parseFloat(this.pointerTop) / 100;
+
+    switch ($event.key) {
+      case 'ArrowLeft':
+        x = Math.max(0, x - step);
+        break;
+      case 'ArrowRight':
+        x = Math.min(1, x + step);
+        break;
+      case 'ArrowUp':
+        y = Math.max(0, y - step);
+        break;
+      case 'ArrowDown':
+        y = Math.min(1, y + step);
+        break;
+      default:
+        moved = false;
+    }
+
+    if (moved) {
+      $event.preventDefault();
+
+      this.pointerLeft = `${x * 100}%`;
+      this.pointerTop = `${y * 100}%`;
+
+      const data: HSVAsource = {
+        h: this.hsl.h,
+        s: x,
+        v: 1 - y,
+        a: this.hsl.a,
+        source: 'hsva',
+      };
+
+      this.onChange.emit({ data, $event });
+    }
   }
 }
 

@@ -26,7 +26,13 @@ import { HSLA, HSLAsource } from './helpers/color.interfaces';
         class="color-hue-container"
       >
         @if (!hidePointer) {
-          <div class="color-hue-pointer" [style.left]="left" [style.top]="top">
+          <div
+            class="color-hue-pointer"
+            [style.left]="left"
+            [style.top]="top"
+            tabindex="0"
+            (keydown)="handleKeydown($event)"
+          >
             <div class="color-hue-slider" [ngStyle]="pointer"></div>
           </div>
         }
@@ -156,6 +162,56 @@ export class HueComponent implements OnChanges {
     }
 
     this.onChange.emit({ data, $event });
+  }
+  handleKeydown($event: KeyboardEvent): void {
+    const step = 1 / 360;
+    let moved = true;
+    let position: number;
+
+    if (this.direction === 'horizontal') {
+      position = parseFloat(this.left) / 100;
+      if ($event.key === 'ArrowLeft') {
+        position = Math.max(0, position - step);
+        this.left = `${position * 100}%`;
+      } else if ($event.key === 'ArrowRight') {
+        position = Math.min(1, position + step);
+        this.left = `${position * 100}%`;
+      } else {
+        moved = false;
+      }
+    } else {
+      position = parseFloat(this.top) / 100;
+      if ($event.key === 'ArrowUp') {
+        position = Math.max(0, position - step);
+        this.top = `${position * 100}%`;
+      } else if ($event.key === 'ArrowDown') {
+        position = Math.min(1, position + step);
+        this.top = `${position * 100}%`;
+      } else {
+        moved = false;
+      }
+    }
+
+    if (moved) {
+      $event.preventDefault();
+
+      let h: number;
+      if (this.direction === 'horizontal') {
+        h = position * 360;
+      } else {
+        h = (1 - position) * 360;
+      }
+
+      const data: HSLAsource = {
+        h,
+        s: this.hsl.s,
+        l: this.hsl.l,
+        a: this.hsl.a,
+        source: 'rgb',
+      };
+
+      this.onChange.emit({ data, $event });
+    }
   }
 }
 
